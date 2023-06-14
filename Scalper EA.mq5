@@ -10,7 +10,7 @@
 #include "Libraries/TradeManager.mqh"
 #include "Libraries/AccountManager.mqh"
 #include "Libraries/StrategyManager.mqh"
-#include "Model/Signal.mqh"
+#include "Model/TradeSignal.mqh"
 #include "Include/Constants.mqh"
 
 AccountManager accountManager;
@@ -52,6 +52,6 @@ void OnTick()
 
 
 //OnSignal from the StrategyManager
-void OnSignal(Signal& signal) {
-   Print("EA > OnSignal "+DoubleToString(signal.bid)+" "+ IntegerToString(signal.type));
+void OnSignal(TradeSignal& tradeSignal) {
+   Print("EA > OnSignal "+DoubleToString(tradeSignal.bid)+" "+ IntegerToString(tradeSignal.type));
 }

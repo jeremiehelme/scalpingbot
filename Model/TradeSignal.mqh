@@ -12,7 +12,7 @@
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-class Signal
+class TradeSignal
   {
 private:
 
@@ -20,14 +20,13 @@ public:
 
 
 
-   SignalTypeEnum    type;
+   TradeSignalTypeEnum    type;
    double            bid;
 
-                     Signal(SignalTypeEnum _type, double _bid)
+                     TradeSignal(TradeSignalTypeEnum _type, double _bid)
      {
       type = _type;
       bid = _bid;
-
      }
   };
 //+------------------------------------------------------------------+

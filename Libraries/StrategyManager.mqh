@@ -8,7 +8,7 @@
 #property version   "1.00"
 
 #include "../Include/Constants.mqh"
-#include "../Model/Signal.mqh"
+#include "../Model/TradeSignal.mqh"
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -17,24 +17,26 @@ class StrategyManager
   {
 private:
 
-   typedef void      (*SignalEvent)(Signal& signal);
-   SignalEvent       signalEvent;
+   trendEnum         trend;
+
+   typedef void      (*TradeSignalEvent)(TradeSignal& signal);
+   TradeSignalEvent       onTradeSignal;
 
    int               ema200Handle;
    int               stochHandle;
 
-   trendEnum         trend;
-
    double            ma200[];
    double            stochK[];
    double            stochD[];
+
+
 public:
                      StrategyManager();
                     ~StrategyManager();
 
-   void              init(SignalEvent OnSignal)
+   void              init(TradeSignalEvent _onTradeSignal)
      {
-      signalEvent = OnSignal;
+      onTradeSignal = _onTradeSignal;
      }
 
    trendEnum         getTrend(double bid)
@@ -67,11 +69,13 @@ public:
       double bid =  SymbolInfoDouble(_Symbol, SYMBOL_BID);
       trend = getTrend(bid);
 
-
+      //wait for stoch :
+      //above 80 && cross
+      //under 20 && cross
       if(trend == uptrend)
         {
-         Signal signal(buy,bid);
-         signalEvent(signal);
+         TradeSignal tradeSignal(buy,bid);
+         onTradeSignal(tradeSignal);
         }
 
 
