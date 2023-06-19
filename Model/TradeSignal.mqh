@@ -18,15 +18,17 @@ private:
 
 public:
 
+   OrderTypeEnum    type;
+   double            price;
+   double            sl;
+   double            tp;
 
-
-   TradeSignalTypeEnum    type;
-   double            bid;
-
-                     TradeSignal(TradeSignalTypeEnum _type, double _bid)
+                     TradeSignal(OrderTypeEnum _type, double _price, double _sl, double _tp)
      {
       type = _type;
-      bid = _bid;
+      price = _price;
+      sl = _sl;
+      tp = _tp;
      }
   };
 //+------------------------------------------------------------------+

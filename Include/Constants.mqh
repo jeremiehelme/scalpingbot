@@ -17,7 +17,7 @@ enum trendEnum
      };
      
      
-enum TradeSignalTypeEnum
+enum OrderTypeEnum
      {
       sell,
       buy

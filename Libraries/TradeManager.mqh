@@ -7,8 +7,13 @@
 #property link      "https://www.jeremiehelme.fr"
 #property version   "1.00"
 
+#include <Expert/Trailing/TrailingFixedPips.mqh>
+
+
+#include "../Include/Constants.mqh"
 #include <Trade/Trade.mqh>
 CTrade trade;
+CTrailingFixedPips Trailing;
 
 
 
@@ -19,59 +24,102 @@ class TradeManager
   {
 private:
 
-   ulong             tradeTickets[10];
-   int               orderCount;
+
+   void              complyToLevels(OrderTypeEnum& type, double& price, double& sl,double& tp)
+     {
+
+      double tradeSpread = SymbolInfoDouble(_Symbol,SYMBOL_POINT) * SYMBOL_TRADE_STOPS_LEVEL;
+
+      if(MathAbs(price - sl) < tradeSpread)
+        {
+         if(type == buy)
+           {
+            sl = price - tradeSpread;
+           }
+         else
+            if(type == sell)
+              {
+               sl = price + tradeSpread;
+              }
+        }
+
+      if(MathAbs(price - tp) < tradeSpread)
+        {
+         if(type == buy)
+           {
+            tp = price + tradeSpread;
+           }
+         else
+            if(type == sell)
+              {
+               tp = price - tradeSpread;
+              }
+        }
+     }
 public:
                      TradeManager();
                     ~TradeManager();
 
 
-   ulong             buyLimitOrder(double entry, double sl, double tp)
-     {
-      if(sl >= entry || tp <= entry)
-        {
-         return -1;
-        }
-
-      if(trade.BuyStop(0.01,entry,_Symbol,sl,tp))
-        {
-         tradeTickets[orderCount] = trade.ResultOrder();
-         orderCount++;
-         return tradeTickets[orderCount];
-        }
-      return -1;
-     }
-
-
-   ulong             sellLimitOrder(double entry, double sl, double tp)
-     {
-      if(sl <= entry || tp >= entry)
-        {
-         return -1;
-        }
-
-      if(trade.SellStop(0.01,entry,_Symbol,sl,tp))
-        {
-         tradeTickets[orderCount] = trade.ResultOrder();
-         orderCount++;
-         return tradeTickets[orderCount];
-        }
-      return -1;
-     }
-
    //+------------------------------------------------------------------+
-   void              closeOrders()
+   //|                                                                  |
+   //+------------------------------------------------------------------+
+   void              placeOrder(OrderTypeEnum type, double price, double sl,double tp)
      {
-      for(uint i = 0; i < tradeTickets.Size(); i++)
+      if(price == NULL || tp  == NULL || sl == NULL)
         {
-         if(tradeTickets[i] != -1)
-           {
-            trade.PositionClose(tradeTickets[i]);
-           }
+         return;
         }
-      orderCount = 0;
-      ArrayInitialize(tradeTickets,-1);
+
+      Print("PLACE ORDER :"+(type == buy ? "BUY":"SELL")+" : "+DoubleToString(price)+" SL "+DoubleToString(sl)+" TP "+DoubleToString(tp));
+
+      complyToLevels(type,price,sl,tp);
+
+      if(type == buy)
+        {
+         trade.Buy(1,_Symbol,price,sl,tp);
+        }
+
+      else
+         if(type == sell)
+           {
+            trade.Sell(1,_Symbol,price,sl,tp);
+           }
      }
+
+   void              OnTick()
+     {
+      //check trailing stop for each position
+      //Trailing.CheckTrailingStopLong()
+      for(int i = 0; i < PositionsTotal(); i++)
+        {
+         CPositionInfo  posInfo;
+         if(posInfo.SelectByTicket(PositionGetTicket(i)))
+           {
+
+            int type = posInfo.Type();
+            double sl = posInfo.StopLoss();
+            double tp = posInfo.TakeProfit();
+            Print(DoubleToString(sl));
+            Print(DoubleToString(tp));
+            if(type == POSITION_TYPE_BUY)
+              {
+               Print("BUY POSITION");
+               //Trailing.CheckTrailingStopLong(posInfo.Identifier(),sl,tp);
+
+              }
+            if(type == POSITION_TYPE_SELL)
+              {
+               Print("SELL POSITION");
+               //Trailing.CheckTrailingStopLong(posInfo.Identifier(),sl,tp);
+
+              }
+           }
+
+        }
+     }
+
+
   };
 //+------------------------------------------------------------------+
 //|                                                                  |

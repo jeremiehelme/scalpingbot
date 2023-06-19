@@ -7,23 +7,29 @@
 #property link      "https://www.jeremiehelme.fr"
 #property version   "1.00"
 
+#include "Libraries/TimeManager.mqh"
 #include "Libraries/TradeManager.mqh"
 #include "Libraries/AccountManager.mqh"
 #include "Libraries/StrategyManager.mqh"
+#include "Libraries/UIManager.mqh"
 #include "Model/TradeSignal.mqh"
 #include "Include/Constants.mqh"
 
-AccountManager accountManager;
+TimeManager timeManager;
 TradeManager tradeManager;
+AccountManager accountManager;
 StrategyManager strategyManager;
+UIManager uiManager;
 
-
+bool allowedToTrade;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   allowedToTrade = false;
    accountManager.describe();
+   timeManager.init();
    strategyManager.init(OnSignal);
    return(INIT_SUCCEEDED);
   }
@@ -39,19 +45,30 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   //give OnTick() to the Managers
-   //allow them to perform required tasks
-   
-   //Check time is right
-   
-   //update strategyManager
+
+//Check time is right
+   if(!timeManager.allowedInterval(TimeCurrent())  && allowedToTrade)
+     {
+      allowedToTrade = false;
+      Print("NOT ALLOWED TO TRADE");
+      return; // don't go further
+     }
+
+   allowedToTrade = true;
+
+//trigger onTicks on the Managers
+//allow them to perform required tasks
    strategyManager.OnTick();
- 
+   tradeManager.OnTick();
   }
 //+------------------------------------------------------------------+
 
 
 //OnSignal from the StrategyManager
-void OnSignal(TradeSignal& tradeSignal) {
-   Print("EA > OnSignal "+DoubleToString(tradeSignal.bid)+" "+ IntegerToString(tradeSignal.type));
-}
+void OnSignal(TradeSignal& tradeSignal)
+  {
+   Print("EA > OnSignal");
+   uiManager.displayTradeSignal(tradeSignal);
+   tradeManager.placeOrder(tradeSignal.type,tradeSignal.price,tradeSignal.sl,tradeSignal.tp);
+  }
+//+------------------------------------------------------------------+
