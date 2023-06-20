@@ -16,9 +16,12 @@ public:
 
    void              describe()
      {
-      Print(DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE)));
+      Print("-------------ACCOUNT INFOS------------");
+      Print("-- ACCOUNT_BALANCE : "+DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE)));
+      Print("-- SYMBOL MIN STOP LEVEL : "+DoubleToString(SymbolInfoDouble(_Symbol,SYMBOL_POINT) * SYMBOL_TRADE_STOPS_LEVEL));
       if(HistorySelect(TimeCurrent() - (30 * 24 * 60 * 60), TimeCurrent()))
         {
+        Print("Trade History :");
          for(int i = 0; i < HistoryDealsTotal(); i++)
            {
             ulong ticket = HistoryDealGetTicket(i);
@@ -26,6 +29,7 @@ public:
             
            }
         }
+        Print("----------------------------------");
      }
 
 

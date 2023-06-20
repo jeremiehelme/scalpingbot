@@ -68,64 +68,76 @@ public:
          return;
         }
 
-      Print("PLACE ORDER :"+(type == buy ? "BUY":"SELL")+" : "+DoubleToString(price)+" SL "+DoubleToString(sl)+" TP "+DoubleToString(tp));
-
       complyToLevels(type,price,sl,tp);
+
+      Print("PLACE ORDER :"+(type == buy ? "BUY":"SELL")+" : "+DoubleToString(price)+" SL "+DoubleToString(sl)+" TP "+DoubleToString(tp));
 
       if(type == buy)
         {
          trade.Buy(1,_Symbol,price,sl,tp);
         }
-
-      else
-         if(type == sell)
-           {
-            trade.Sell(1,_Symbol,price,sl,tp);
-           }
+      if(type == sell)
+        {
+         trade.Sell(1,_Symbol,price,sl,tp);
+        }
      }
 
    void              OnTick(MqlTick& tick)
      {
       //check trailing stop for each position
-      double tradeSpread = SymbolInfoDouble(_Symbol,SYMBOL_POINT) * SYMBOL_TRADE_STOPS_LEVEL;
+      double tradeSpread = SymbolInfoDouble(_Symbol,SYMBOL_POINT) * (SYMBOL_TRADE_STOPS_LEVEL+1);
       for(int i = 0; i < PositionsTotal(); i++)
         {
-         ulong ticket=PositionGetTicket(i);
+         ulong ticket = PositionGetTicket(i);
          PositionSelectByTicket(ticket);
          long type = PositionGetInteger(POSITION_TYPE);
          double sl = PositionGetDouble(POSITION_SL);
          double tp = PositionGetDouble(POSITION_TP);
          double open = PositionGetDouble(POSITION_PRICE_OPEN);
-         
+
          if(type == POSITION_TYPE_BUY)
            {
-            Print("TM > BUY POS "+DoubleToString(open)+" "+DoubleToString(tick.last)+" "+DoubleToString(tradeSpread)+" "+DoubleToString(open - tradeSpread));
-            double nextTrigger = sl <= open ? open + tradeSpread : sl + tradeSpread;
-            if(tick.last > nextTrigger)
+            if(sl < open)
               {
-
-               Print("TM > BE BUY");
-               trade.PositionModify(ticket,
-                                    nextTrigger,
-                                    nextTrigger+(2*tradeSpread));
+               if(tick.last > (open + tradeSpread))
+                 {
+                  Print("TM > BE");
+                  trade.PositionModify(ticket,
+                                       open,
+                                       open + (4*tradeSpread));
+                 }
+               continue;
               }
-
+            if(tick.last > sl + (tradeSpread*1.2))
+              {
+               Print("TM > TRAIL SL");
+               trade.PositionModify(ticket,
+                                    sl + tradeSpread,
+                                    sl + (4*tradeSpread));
+              }
+              continue;
            }
          if(type == POSITION_TYPE_SELL)
            {
-            Print("TM > SELL POS "+DoubleToString(open)+" "+DoubleToString(tick.last)+" "+DoubleToString(tradeSpread)+" "+DoubleToString(open - tradeSpread));
-            
-            //Next Trigger = open - tradeSpread ou SL - tradeSpread
-            double nextTrigger = sl >= open ? open - tradeSpread : sl - tradeSpread;
-            if(tick.last < nextTrigger)
+            if(sl > open)
               {
-
-               Print("TM > BE SELL");
-               trade.PositionModify(ticket,
-                                    nextTrigger,
-                                    nextTrigger-(2*tradeSpread));
+               if(tick.last < (open - tradeSpread))
+                 {
+                  Print("TM > BE");
+                  trade.PositionModify(ticket,
+                                       open,
+                                       open - (4*tradeSpread));
+                 }
+               continue;
               }
-
+            if(tick.last < sl - (tradeSpread*1.2))
+              {
+               Print("TM > TRAIL SL");
+               trade.PositionModify(ticket,
+                                    sl - tradeSpread,
+                                    sl - (4*tradeSpread));
+              }
+              continue;
            }
         }
      }

@@ -33,6 +33,7 @@ private:
    
    int TP_TICKS;
    int SL_TICKS;
+   double tradeSpread;
 
 
    double            getMidPreviousCandle()
@@ -41,7 +42,7 @@ private:
       MqlRates previousBar[]; 
       ArraySetAsSeries(previousBar,true);
       CopyRates(_Symbol,PERIOD_M1,0,2,previousBar);
-      Print("HIGH "+previousBar[1].high+" LOW "+previousBar[1].low);
+      Print("SM > Previous bar : HIGH "+previousBar[1].high+" LOW "+previousBar[1].low);
       return previousBar[1].high - ((previousBar[1].high - previousBar[1].low)/2);
 
      }
@@ -93,7 +94,7 @@ public:
          Print("UPTREND BUY stochK[0] < 20 ("+DoubleToString(stochK[0])+") D < K ("+stochD[0]+")" );
          orderSent = true;
          double midPreviousCandle = getMidPreviousCandle();
-         TradeSignal tradeSignal(buy,ask,ask - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, ask + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *TP_TICKS);
+         TradeSignal tradeSignal(buy,ask,ask - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, ask + (4*tradeSpread));
          onTradeSignal(tradeSignal);
          return;
         }
@@ -104,7 +105,7 @@ public:
          Print("DOWNTREND SELL stochK[0] > 80 ("+DoubleToString(stochK[0])+") D > K ("+stochD[0]+")" );
          orderSent = true;
          double midPreviousCandle = getMidPreviousCandle();
-         TradeSignal tradeSignal(sell,bid,bid + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, bid - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *TP_TICKS);
+         TradeSignal tradeSignal(sell,bid,bid + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, bid - (4*tradeSpread));
          onTradeSignal(tradeSignal);
          return;
         }
@@ -125,11 +126,12 @@ public:
 //+------------------------------------------------------------------+
 StrategyManager::StrategyManager()
   {
-   TP_TICKS = 60;
    SL_TICKS = 40;
+   TP_TICKS = 60;
    ema200Handle = iMA(_Symbol,PERIOD_M1,200,0,MODE_EMA,PRICE_CLOSE);
    stochHandle = iStochastic(_Symbol,PERIOD_M1,14,3,4,MODE_SMA,STO_CLOSECLOSE);
-
+   tradeSpread = SymbolInfoDouble(_Symbol,SYMBOL_POINT) * (SYMBOL_TRADE_STOPS_LEVEL+1);
+      
    ChartIndicatorAdd(0,0,ema200Handle);
    ChartIndicatorAdd(0,0,stochHandle);
   }
