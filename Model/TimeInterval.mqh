@@ -37,11 +37,10 @@ public:
       MqlDateTime startStruct;
       TimeToStruct(start,startStruct);
       
-      
       MqlDateTime endStruct;
       TimeToStruct(end,endStruct);
 
-      return currentStruct.hour >= startStruct.hour && currentStruct.hour < endStruct.hour; 
+      return (currentStruct.hour >= startStruct.hour) && (currentStruct.min >= startStruct.min)  && (currentStruct.hour < endStruct.hour) && (currentStruct.min < endStruct.min); 
      }
 
 

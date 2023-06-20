@@ -21,13 +21,12 @@ AccountManager accountManager;
 StrategyManager strategyManager;
 UIManager uiManager;
 
-bool allowedToTrade;
+
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   allowedToTrade = false;
    accountManager.describe();
    timeManager.init();
    strategyManager.init(OnSignal);
@@ -46,23 +45,24 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 
+   MqlTick tick;
+   SymbolInfoTick(_Symbol,tick);
+
+//always call the trade manager to manager current orders
+      tradeManager.OnTick(tick);
+      
 //Check time is right
-   if(!timeManager.allowedInterval(TimeCurrent())  && allowedToTrade)
+   if(!timeManager.allowedInterval(TimeCurrent()))
      {
-      allowedToTrade = false;
       Print("NOT ALLOWED TO TRADE");
       return; // don't go further
      }
-
-   allowedToTrade = true;
-
-   MqlTick tick;
-   SymbolInfoTick(_Symbol,tick);
-     
-//trigger onTicks on the Managers
-//allow them to perform required tasks
-   strategyManager.OnTick(tick);
-   tradeManager.OnTick(tick);
+   else
+     {
+      //trigger onTicks on the Managers
+      //allow them to perform required tasks
+      strategyManager.OnTick(tick);
+     }
   }
 //+------------------------------------------------------------------+
 
