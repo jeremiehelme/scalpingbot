@@ -7,13 +7,10 @@
 #property link      "https://www.jeremiehelme.fr"
 #property version   "1.00"
 
-#include <Expert/Trailing/TrailingFixedPips.mqh>
-
 
 #include "../Include/Constants.mqh"
 #include <Trade/Trade.mqh>
 CTrade trade;
-CTrailingFixedPips Trailing;
 
 
 
@@ -87,40 +84,53 @@ public:
            }
      }
 
-   void              OnTick()
+   void              OnTick(MqlTick& tick)
      {
       //check trailing stop for each position
-      //Trailing.CheckTrailingStopLong()
+      double tradeSpread = SymbolInfoDouble(_Symbol,SYMBOL_POINT) * SYMBOL_TRADE_STOPS_LEVEL;
       for(int i = 0; i < PositionsTotal(); i++)
         {
-         CPositionInfo  posInfo;
-         if(posInfo.SelectByTicket(PositionGetTicket(i)))
+         ulong ticket=PositionGetTicket(i);
+         PositionSelectByTicket(ticket);
+         long type = PositionGetInteger(POSITION_TYPE);
+         double sl = PositionGetDouble(POSITION_SL);
+         double tp = PositionGetDouble(POSITION_TP);
+         double open = PositionGetDouble(POSITION_PRICE_OPEN);
+         
+         if(type == POSITION_TYPE_BUY)
            {
-
-            int type = posInfo.Type();
-            double sl = posInfo.StopLoss();
-            double tp = posInfo.TakeProfit();
-            Print(DoubleToString(sl));
-            Print(DoubleToString(tp));
-            if(type == POSITION_TYPE_BUY)
+            Print("TM > BUY POS "+DoubleToString(open)+" "+DoubleToString(tick.last)+" "+DoubleToString(tradeSpread)+" "+DoubleToString(open - tradeSpread));
+            double nextTrigger = sl <= open ? open + tradeSpread : sl + tradeSpread;
+            if(tick.last > nextTrigger)
               {
-               Print("BUY POSITION");
-               //Trailing.CheckTrailingStopLong(posInfo.Identifier(),sl,tp);
 
+               Print("TM > BE BUY");
+               trade.PositionModify(ticket,
+                                    nextTrigger,
+                                    nextTrigger+(2*tradeSpread));
               }
-            if(type == POSITION_TYPE_SELL)
-              {
-               Print("SELL POSITION");
-               //Trailing.CheckTrailingStopLong(posInfo.Identifier(),sl,tp);
 
-              }
            }
+         if(type == POSITION_TYPE_SELL)
+           {
+            Print("TM > SELL POS "+DoubleToString(open)+" "+DoubleToString(tick.last)+" "+DoubleToString(tradeSpread)+" "+DoubleToString(open - tradeSpread));
+            
+            //Next Trigger = open - tradeSpread ou SL - tradeSpread
+            double nextTrigger = sl >= open ? open - tradeSpread : sl - tradeSpread;
+            if(tick.last < nextTrigger)
+              {
 
+               Print("TM > BE SELL");
+               trade.PositionModify(ticket,
+                                    nextTrigger,
+                                    nextTrigger-(2*tradeSpread));
+              }
+
+           }
         }
      }
-
-
   };
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -130,7 +140,11 @@ TradeManager::TradeManager()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-TradeManager::~TradeManager()
+TradeManager::   ~TradeManager()
   {
   }
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+
 //+------------------------------------------------------------------+

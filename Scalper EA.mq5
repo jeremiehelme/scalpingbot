@@ -56,10 +56,13 @@ void OnTick()
 
    allowedToTrade = true;
 
+   MqlTick tick;
+   SymbolInfoTick(_Symbol,tick);
+     
 //trigger onTicks on the Managers
 //allow them to perform required tasks
-   strategyManager.OnTick();
-   tradeManager.OnTick();
+   strategyManager.OnTick(tick);
+   tradeManager.OnTick(tick);
   }
 //+------------------------------------------------------------------+
 

@@ -30,6 +30,9 @@ private:
    double            stochD[];
 
    bool              orderSent;
+   
+   int TP_TICKS;
+   int SL_TICKS;
 
 
    double            getMidPreviousCandle()
@@ -73,17 +76,15 @@ public:
      };
 
 
-   void              OnTick()
+   void              OnTick(MqlTick& tick)
      {
       CopyBuffer(ema200Handle,0,0,1,ema200);
-      CopyBuffer(stochHandle,0,0,1,stochK);
-      CopyBuffer(stochHandle,1,0,1,stochD);
+      CopyBuffer(stochHandle,MAIN_LINE,0,1,stochK);
+      CopyBuffer(stochHandle,SIGNAL_LINE,0,1,stochD);
 
       double bid =  SymbolInfoDouble(_Symbol, SYMBOL_BID);
       double ask =  SymbolInfoDouble(_Symbol, SYMBOL_ASK);
       
-      MqlTick tick;
-      SymbolInfoTick(_Symbol,tick);
       trend = getTrend(tick);
 
       //uptrend && under 20 && cross && order not sent
@@ -92,7 +93,7 @@ public:
          Print("UPTREND BUY stochK[0] < 20 ("+DoubleToString(stochK[0])+") D < K ("+stochD[0]+")" );
          orderSent = true;
          double midPreviousCandle = getMidPreviousCandle();
-         TradeSignal tradeSignal(buy,ask,midPreviousCandle, ask + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *10);
+         TradeSignal tradeSignal(buy,ask,ask - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, ask + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *TP_TICKS);
          onTradeSignal(tradeSignal);
          return;
         }
@@ -103,7 +104,7 @@ public:
          Print("DOWNTREND SELL stochK[0] > 80 ("+DoubleToString(stochK[0])+") D > K ("+stochD[0]+")" );
          orderSent = true;
          double midPreviousCandle = getMidPreviousCandle();
-         TradeSignal tradeSignal(sell,bid,midPreviousCandle, bid - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *10);
+         TradeSignal tradeSignal(sell,bid,bid + SymbolInfoDouble(_Symbol,SYMBOL_POINT) *SL_TICKS, bid - SymbolInfoDouble(_Symbol,SYMBOL_POINT) *TP_TICKS);
          onTradeSignal(tradeSignal);
          return;
         }
@@ -124,6 +125,8 @@ public:
 //+------------------------------------------------------------------+
 StrategyManager::StrategyManager()
   {
+   TP_TICKS = 60;
+   SL_TICKS = 40;
    ema200Handle = iMA(_Symbol,PERIOD_M1,200,0,MODE_EMA,PRICE_CLOSE);
    stochHandle = iStochastic(_Symbol,PERIOD_M1,14,3,4,MODE_SMA,STO_CLOSECLOSE);
 
